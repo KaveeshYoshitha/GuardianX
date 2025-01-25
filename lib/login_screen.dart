@@ -34,7 +34,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 10),
               const Align(
                 alignment: Alignment.centerLeft,
-                child: const Text(
+                child: Text(
                   "Email",
                   style: TextStyle(fontSize: 14, color: Colors.black),
                 ),
@@ -54,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 15),
               const Align(
                 alignment: Alignment.centerLeft,
-                child: const Text(
+                child: Text(
                   "Password",
                   style: TextStyle(fontSize: 14, color: Colors.black),
                 ),
