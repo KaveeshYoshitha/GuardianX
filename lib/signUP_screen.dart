@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+
     return Scaffold(
       backgroundColor: const Color(0xFFA9DAD6), // Background color
       body: Center(
@@ -32,27 +36,58 @@ class SignUpScreen extends StatelessWidget {
               ),
               const SizedBox(height: 20),
 
-              // Username TextField
-              _buildTextField('Enter Your Username', false),
-              const SizedBox(height: 15),
-
               // Email TextField
-              _buildTextField('Enter Your Email', false),
-              const SizedBox(height: 15),
-
-              // Phone Number TextField
-              _buildTextField('Enter Your Phone Number', false),
+              _buildTextField('Enter Your Email', emailController, false),
               const SizedBox(height: 15),
 
               // Password TextField
-              _buildTextField('Enter Your Password', true),
+              _buildTextField('Enter Your Password', passwordController, true),
               const SizedBox(height: 20),
 
               // Sign Up Button
               ElevatedButton(
-                onPressed: () {
-                  // Handle Sign Up action
-                  print("Sign-Up Clicked");
+                onPressed: () async {
+                  String email = emailController.text.trim();
+                  String password = passwordController.text.trim();
+
+                  if (email.isEmpty || password.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please fill in all fields'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  try {
+                    UserCredential userCredential = await FirebaseAuth.instance
+                        .createUserWithEmailAndPassword(
+                      email: email,
+                      password: password,
+                    );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(
+                            'Sign-Up Successful! Welcome, ${userCredential.user?.email}'),
+                      ),
+                    );
+                  } on FirebaseAuthException catch (e) {
+                    String message;
+                    if (e.code == 'weak-password') {
+                      message = 'The password provided is too weak.';
+                    } else if (e.code == 'email-already-in-use') {
+                      message = 'The account already exists for that email.';
+                    } else {
+                      message = e.message ?? 'An error occurred.';
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(message)),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFFF9E6), // Button color
@@ -131,8 +166,10 @@ class SignUpScreen extends StatelessWidget {
   }
 
   // Helper method to build text fields
-  Widget _buildTextField(String hintText, bool obscureText) {
+  Widget _buildTextField(
+      String hintText, TextEditingController controller, bool obscureText) {
     return TextField(
+      controller: controller,
       obscureText: obscureText,
       decoration: InputDecoration(
         hintText: hintText,

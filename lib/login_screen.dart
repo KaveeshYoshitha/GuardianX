@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:guardianx/home_screen.dart';
 import 'signUP_screen.dart';
 
@@ -10,8 +11,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
   bool _isPasswordVisible = false;
-  bool _isRememberMeChecked = false;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 5),
               TextField(
+                controller: emailController,
                 decoration: InputDecoration(
                   hintText: "example@gmail.com",
                   filled: true,
@@ -61,6 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 5),
               TextField(
+                controller: passwordController,
                 obscureText: !_isPasswordVisible,
                 decoration: InputDecoration(
                   hintText: "Enter Your Password",
@@ -84,44 +88,49 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 10),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _isRememberMeChecked,
-                        onChanged: (value) {
-                          setState(() {
-                            _isRememberMeChecked = value ?? false;
-                          });
-                        },
-                      ),
-                      const Text(
-                        "Remember Me",
-                        style: TextStyle(color: Colors.black),
-                      ),
-                    ],
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      // Navigate to Forgot Password screen
-                    },
-                    child: const Text(
-                      "Forgot Password?",
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ),
-                ],
-              ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const HomeScreen()),
-                  ); // Handle Login action
+                onPressed: () async {
+                  String email = emailController.text.trim();
+                  String password = passwordController.text.trim();
+
+                  if (email.isEmpty || password.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please fill in all fields'),
+                      ),
+                    );
+                    return;
+                  }
+
+                  try {
+                    UserCredential userCredential =
+                        await FirebaseAuth.instance.signInWithEmailAndPassword(
+                      email: email,
+                      password: password,
+                    );
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const HomeScreen()),
+                    );
+                  } on FirebaseAuthException catch (e) {
+                    String message;
+                    if (e.code == 'user-not-found') {
+                      message = 'No user found for that email.';
+                    } else if (e.code == 'wrong-password') {
+                      message = 'Incorrect password.';
+                    } else {
+                      message = e.message ?? 'An error occurred.';
+                    }
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(message)),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error: $e')),
+                    );
+                  }
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFFF9E6),
@@ -153,7 +162,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
               ),
               const SizedBox(height: 20),
-              // Google Login Button with Google Logo
               ElevatedButton.icon(
                 onPressed: () {
                   // Handle Google Login action
@@ -179,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     context,
                     MaterialPageRoute(
                         builder: (context) => const SignUpScreen()),
-                  ); // Navigate to Sign-Up screen
+                  );
                 },
                 child: const Text.rich(
                   TextSpan(
