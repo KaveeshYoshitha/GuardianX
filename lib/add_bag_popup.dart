@@ -1,12 +1,24 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddBagPopup extends StatelessWidget {
   final TextEditingController bagNameController = TextEditingController();
   final TextEditingController ownerNameController = TextEditingController();
+  final TextEditingController currentEmailController = TextEditingController();
 
-  final Function(String bagName, String ownerName) onSave;
+  AddBagPopup({super.key});
 
-  AddBagPopup({super.key, required this.onSave});
+  Future<void> saveBagToFirebase(
+      String bagName, String ownerName, String userId, String userEmail) async {
+    await FirebaseFirestore.instance.collection('bags').add({
+      'name': bagName,
+      'owner': ownerName,
+      'userId': userId, // Store the User ID
+      'userEmail': userEmail, // Store the User Email
+      'timestamp': FieldValue.serverTimestamp(), // Store when the bag was added
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +36,6 @@ class AddBagPopup extends StatelessWidget {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Bag Name Field
           TextField(
             controller: bagNameController,
             decoration: const InputDecoration(
@@ -33,7 +44,6 @@ class AddBagPopup extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 20),
-          // Owner's Name Field
           TextField(
             controller: ownerNameController,
             decoration: const InputDecoration(
@@ -44,29 +54,35 @@ class AddBagPopup extends StatelessWidget {
         ],
       ),
       actions: [
-        // Cancel Button
         TextButton(
           onPressed: () {
-            Navigator.pop(context); // Close the popup
+            if (context.mounted) Navigator.pop(context); // Close the popup
           },
           child: const Text(
             'Cancel',
             style: TextStyle(color: Colors.red),
           ),
         ),
-        // Save Button
         ElevatedButton(
-          onPressed: () {
+          onPressed: () async {
             String bagName = bagNameController.text.trim();
             String ownerName = ownerNameController.text.trim();
 
-            if (bagName.isNotEmpty && ownerName.isNotEmpty) {
-              onSave(bagName, ownerName); // Pass data back to the home page
+            // Get current logged-in user
+            User? user = FirebaseAuth.instance.currentUser;
+
+            if (user != null && bagName.isNotEmpty && ownerName.isNotEmpty) {
+              String userId = user.uid; // Get User ID
+              String userEmail =
+                  user.email ?? "Unknown"; // Get User Email (Optional)
+
+              await saveBagToFirebase(
+                  bagName, ownerName, userId, userEmail); // Pass user details
               Navigator.pop(context); // Close the popup
             } else {
               ScaffoldMessenger.of(context).showSnackBar(
                 const SnackBar(
-                  content: Text('Please fill in all fields'),
+                  content: Text('Please fill in all fields or log in first'),
                 ),
               );
             }

@@ -1,29 +1,10 @@
 import 'package:flutter/material.dart';
-import 'add_bag_popup.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'bag_details_page.dart';
+import 'add_bag_popup.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
-
-class _HomeScreenState extends State<HomeScreen> {
-  List<Map<String, String>> bags = []; // List to store bag details
-
-  void addBag(String bagName, String ownerName) {
-    setState(() {
-      bags.add(
-          {'name': bagName, 'owner': ownerName}); // Add new bag to the list
-    });
-  }
-
-  void removeBag(int index) {
-    setState(() {
-      bags.removeAt(index); // Remove bag at the given index
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,8 +14,7 @@ class _HomeScreenState extends State<HomeScreen> {
         backgroundColor: const Color(0xFFC1E4E9),
         elevation: 0,
         leading: const CircleAvatar(
-          backgroundImage: AssetImage(
-              'assets/images/profile_image.png'), // Example profile image
+          backgroundImage: AssetImage('assets/images/profile_image.png'),
         ),
         actions: [
           IconButton(
@@ -54,63 +34,72 @@ class _HomeScreenState extends State<HomeScreen> {
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 20),
-            // Display Bag Cards if available
             Expanded(
-              child: bags.isEmpty
-                  ? const Center(
+              child: StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('bags')
+                    .orderBy('timestamp', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    return const Center(
                       child: Text(
                         'No bags added yet.',
                         style: TextStyle(fontSize: 18),
                       ),
-                    )
-                  : ListView.builder(
-                      itemCount: bags.length,
-                      itemBuilder: (context, index) {
-                        final bag = bags[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(vertical: 10),
-                          color: const Color(0xFFFFF9E6),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(15),
-                          ),
-                          child: ListTile(
-                            title: Text('Bag: ${bag['name']}'),
-                            subtitle: Text("Owner: ${bag['owner']}"),
-                            trailing: const Icon(Icons.arrow_forward_ios),
-                            onTap: () {
-                              // Navigate to BagDetailsPage
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => BagDetailsPage(
-                                    bagName: bag['name']!,
-                                    ownerName: bag['owner']!,
-                                    onRemoveBag: () {
-                                      Navigator.pop(
-                                          context); // Go back to HomeScreen
-                                      removeBag(index); // Remove the bag
-                                    },
-                                  ),
+                    );
+                  }
+
+                  final bags = snapshot.data!.docs;
+
+                  return ListView.builder(
+                    itemCount: bags.length,
+                    itemBuilder: (context, index) {
+                      final bag = bags[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(vertical: 10),
+                        color: const Color(0xFFFFF9E6),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: ListTile(
+                          title: Text('Bag: ${bag['name']}'),
+                          subtitle: Text("Owner: ${bag['owner']}"),
+                          trailing: const Icon(Icons.arrow_forward_ios),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BagDetailsPage(
+                                  bagName: bag['name'],
+                                  ownerName: bag['owner'],
+                                  onRemoveBag: () async {
+                                    await FirebaseFirestore.instance
+                                        .runTransaction((transaction) async {
+                                      transaction.delete(bag.reference);
+                                    });
+                                    Navigator.pop(context);
+                                  },
                                 ),
-                              );
-                            },
-                          ),
-                        );
-                      },
-                    ),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-            // Add Bag Button
             ElevatedButton(
               onPressed: () {
                 showDialog(
                   context: context,
-                  builder: (BuildContext context) {
-                    return AddBagPopup(
-                      onSave: (bagName, ownerName) {
-                        addBag(bagName, ownerName); // Add bag to list
-                      },
-                    );
-                  },
+                  builder: (BuildContext context) => AddBagPopup(),
                 );
               },
               style: ElevatedButton.styleFrom(
