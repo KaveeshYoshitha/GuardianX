@@ -8,6 +8,43 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+ext {
+    kotlin_version = '1.8.0'
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader("UTF-8") { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
+if (flutterVersionCode == null) {
+    flutterVersionCode = "1"
+}
+
+def flutterVersionName = localProperties.getProperty("flutter.versionName")
+if (flutterVersionName == null) {
+    flutterVersionName = "1.0"
+}
+
+def flutterCompileSdkVersion = localProperties.getProperty("flutter.compileSdkVersion")
+if (flutterCompileSdkVersion == null) {
+    flutterCompileSdkVersion = 34
+}
+
+def flutterTargetSdkVersion = localProperties.getProperty("flutter.targetSdkVersion")
+if (flutterTargetSdkVersion == null) {
+    flutterTargetSdkVersion = 34
+}
+
+def flutterMinSdkVersion = localProperties.getProperty("flutter.minSdkVersion")
+if (flutterMinSdkVersion == null) {
+    flutterMinSdkVersion = 34
+}
+
 android {
     namespace = "com.example.guardianx"
     compileSdk = flutter.compileSdkVersion
@@ -27,8 +64,9 @@ android {
         applicationId = "com.example.guardianx"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
-        targetSdk = flutter.targetSdkVersion
+        // minSdk = flutter.minSdkVersion
+        minSdk = flutterMinSdkVersion.toInteger()
+        targetSdk = 33
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

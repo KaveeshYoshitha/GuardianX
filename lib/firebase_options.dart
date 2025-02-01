@@ -66,6 +66,7 @@ class DefaultFirebaseOptions {
     projectId: 'guardianx-bc5b6',
     databaseURL: 'https://guardianx-bc5b6-default-rtdb.firebaseio.com',
     storageBucket: 'guardianx-bc5b6.firebasestorage.app',
+    iosClientId: '660325826499-8uj3frndi377gdkgap3ctf1gfsncdpos.apps.googleusercontent.com',
     iosBundleId: 'com.example.guardianx',
   );
 
@@ -76,6 +77,7 @@ class DefaultFirebaseOptions {
     projectId: 'guardianx-bc5b6',
     databaseURL: 'https://guardianx-bc5b6-default-rtdb.firebaseio.com',
     storageBucket: 'guardianx-bc5b6.firebasestorage.app',
+    iosClientId: '660325826499-8uj3frndi377gdkgap3ctf1gfsncdpos.apps.googleusercontent.com',
     iosBundleId: 'com.example.guardianx',
   );
 
